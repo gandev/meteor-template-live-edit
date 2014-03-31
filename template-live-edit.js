@@ -86,7 +86,7 @@ Template.liveEdit.events({
     'keyup .liveEdit_html': function(evt, tmpl) {
         Session.set('liveEdit_html_update', editorHtml.getSession().getValue());
     },
-    'keyup .liveEdit_javascript': function(evt, tmpl) {
+    'click #liveEdit_javascript': function(evt, tmpl) {
         Session.set('liveEdit_javascript_update', editorJavascript.getSession().getValue());
     }
 });
