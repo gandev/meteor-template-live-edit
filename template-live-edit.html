@@ -1,35 +1,44 @@
 <template name="liveEdit">
-
   <div class="navbar">
     <div class="navbar-inner">
       <a class="brand" href="#">Template live editing...</a>
       <ul class="nav">
-        <li><a href="https://github.com/gandev/meteor-template-live-edit">git</a></li>
+        <li><a id="resetLiveEdit">RESET</a></li>
+        <li><a href="https://github.com/gandev/meteor-template-live-edit">GIT</a></li>
       </ul>
     </div>
   </div>
   <div class="container-fluid">
     <div class="row-fluid">
-      <div class="span6 editor editor-html">
-        <h4>blaze/spacebars html template:</h4>
-        <p>preview is updated automatically while typing...</p>
-        <div id="aceEditorHtml" class="ace-editor liveEdit_html"></div>
-      </div>
+      {{> liveEdit_html_edit}}
       <div class="span6 content content-preview">
         <h4>template preview:</h4>
         <div id="liveEdit_preview">
-          {{#with template_view}}
+          {{#with template_content}}
             {{> preview}}
           {{/with}}
         </div>
       </div>
     </div>
     <div class="row-fluid">
-      <div class="span6 editor editor-javascript">
-        <h4>javascript helpers/events of template above:</h4>
-        <div id="aceEditorJavascript" class="ace-editor"></div>
-        <button class="btn" id="liveEdit_javascript">apply javascript...</button>
-      </div>
+      {{> liveEdit_javascript_edit}}
     </div>
+  </div>
+</template>
+
+<template name="liveEdit_html_edit">
+  <div class="span6 editor editor-html">
+    <h4>blaze/spacebars html template:</h4>
+    <p>preview is updated automatically while typing.</p>
+    <div id="aceEditorHtml" class="ace-editor liveEdit_html"></div>
+  </div>
+</template>
+
+<template name="liveEdit_javascript_edit">
+  <div class="span6 editor editor-javascript">
+    <h4>javascript helpers/events of template above:</h4>
+    <p>mockDataContext becomes the template data context (this in helpers).</p>
+    <div id="aceEditorJavascript" class="ace-editor"></div>
+    <button class="btn" id="liveEdit_javascript">apply javascript...</button>
   </div>
 </template>

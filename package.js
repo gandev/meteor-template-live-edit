@@ -2,6 +2,8 @@ Package.describe({summary: 'template-live-edit package'});
 
 Package.on_use(function(api) {
 	api.use('standard-app-packages');
+	api.use('bootstrap','client');
+	api.use('spacebars-compiler');
 
 	//at the moment only for debugging, template {{liveEdit}} brings all you need
 	api.export('LiveEditTemplates');

@@ -1,10 +1,17 @@
-var createPreviewComponent = function(template_html, template_javascript) {
+var tmpl_id;
+var tmpl_context;
+
+var createPreviewComponent = function(template_html) {
     var component_attr = {
         kind: "Template_liveEdit_preview",
         __helperHost: true
     };
 
     var errMessage;
+
+    if(tmpl_context instanceof Error) {
+      errMessage = "JAVASCRIPT | " + err.toString();
+    }
 
     if (template_html) {
         try {
@@ -18,16 +25,6 @@ var createPreviewComponent = function(template_html, template_javascript) {
         }
     }
 
-    if (template_javascript) {
-        try {
-            template_javascript = eval('(function() {return ' + template_javascript + ';})();') || {};
-            //console.log(template_javascript.helpers);
-        } catch (err) {
-            errMessage = "JAVASCRIPT | " + err.toString();
-
-        }
-    }
-
     if (errMessage) {
         component_attr = _.extend(component_attr, {
             render: function() {
@@ -38,9 +35,9 @@ var createPreviewComponent = function(template_html, template_javascript) {
 
     var component = UI.Component.extend(component_attr);
 
-    if (template_javascript && !errMessage) {
-        component.helpers(template_javascript.helpers);
-        component.events(template_javascript.events);
+    if (tmpl_context && !errMessage) {
+        component.helpers(tmpl_context.helpers);
+        component.events(tmpl_context.events);
     }
 
     return component;
@@ -48,14 +45,18 @@ var createPreviewComponent = function(template_html, template_javascript) {
 
 var editorHtml;
 var editorJavascript;
+var editors_initialized = false;
 
-Template.liveEdit.rendered = function() {
+Template.liveEdit_html_edit.rendered = function() {
     editorHtml = ace.edit("aceEditorHtml");
-    editorJavascript = ace.edit("aceEditorJavascript");
 
     editorHtml.setTheme("ace/theme/xcode");
     editorHtml.getSession().setMode("ace/mode/html");
     editorHtml.setHighlightActiveLine(true);
+};
+
+Template.liveEdit_javascript_edit.rendered = function() {
+    editorJavascript = ace.edit("aceEditorJavascript");
 
     editorJavascript.setTheme("ace/theme/xcode");
     editorJavascript.getSession().setMode("ace/mode/javascript");
@@ -63,30 +64,55 @@ Template.liveEdit.rendered = function() {
 };
 
 Template.liveEdit.helpers({
-    template_view: function() {
-        var tmpl = LiveEditTemplates.findOne();
+    template_content: function() {
+        var tmpl_content = LiveEditTemplates.findOne();
 
-        if (!tmpl) return;
+        if (!tmpl_content) return;
 
-        editorHtml.getSession().setValue(tmpl.html);
-        editorJavascript.getSession().setValue(tmpl.js);
+        tmpl_id = tmpl_content._id;
 
-        Session.set('liveEdit_html_update', tmpl.html);
-        Session.set('liveEdit_javascript_update', tmpl.js);
+        try {
+            tmpl_context = eval(tmpl_content.js) || {};
+            //console.log(template_javascript.helpers);
+        } catch (err) {
+            tmpl_context = err;
+        }
 
-        return tmpl;
+        if(!editors_initialized) {
+          editorHtml.getSession().setValue(tmpl_content.html);
+          editorJavascript.getSession().setValue(tmpl_content.js);
+          editors_initialized = true;
+        }
+
+        return tmpl_context.mockDataContext;
     },
     preview: function() {
-        return createPreviewComponent(Session.get('liveEdit_html_update'),
-            Session.get('liveEdit_javascript_update'));
+        var tmpl_content = LiveEditTemplates.findOne(tmpl_id);
+        if(!tmpl_content) return null;
+        
+        var component = createPreviewComponent(tmpl_content.html);
+
+        return component;
     }
 });
 
 Template.liveEdit.events({
     'keyup .liveEdit_html': function(evt, tmpl) {
-        Session.set('liveEdit_html_update', editorHtml.getSession().getValue());
+        LiveEditTemplates.update(tmpl_id, {
+            '$set': {
+                html: editorHtml.getSession().getValue()
+            }
+        });
     },
     'click #liveEdit_javascript': function(evt, tmpl) {
-        Session.set('liveEdit_javascript_update', editorJavascript.getSession().getValue());
+        LiveEditTemplates.update(tmpl_id, {
+            '$set': {
+                js: editorJavascript.getSession().getValue()
+            }
+        });
+    },
+    'click #resetLiveEdit': function (evt, tmpl) {
+      editors_initialized = false;
+      Meteor.call('resetLiveEdit');
     }
 });
